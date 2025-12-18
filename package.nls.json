@@ -1,0 +1,6 @@
+{
+  "extension.description": "Elegant Markdown preview with math formulas and zoomable Mermaid diagrams.",
+  "command.openPreview": "Open MC Markdown Preview",
+  "preview.title": "MC Markdown Preview"
+}
+

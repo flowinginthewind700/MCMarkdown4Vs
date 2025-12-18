@@ -1,0 +1,6 @@
+{
+  "extension.description": "优雅的 Markdown 预览插件，支持数学公式和 Mermaid 图表，点击可放大",
+  "command.openPreview": "打开 MC Markdown 预览",
+  "preview.title": "MC Markdown 预览"
+}
+
