@@ -20,17 +20,26 @@
       typographer: true,
       breaks: true,
       highlight: function (str, lang) {
+        let highlighted = '';
         if (lang && typeof hljs !== 'undefined') {
           try {
             if (hljs.getLanguage(lang)) {
-              return hljs.highlight(str, { language: lang }).value;
+              highlighted = hljs.highlight(str, { language: lang }).value;
             } else {
-              // 自动检测
-              return hljs.highlightAuto(str).value;
+              highlighted = hljs.highlightAuto(str).value;
             }
-          } catch (__) {}
+          } catch (__) {
+            highlighted = escapeHtml(str);
+          }
+        } else {
+          highlighted = escapeHtml(str);
         }
-        return ''; // 使用默认转义
+
+        // 将空格和制表符包装在 span 中，以便控制显示/隐藏
+        // 使用正则避免替换 HTML 标签内部的空格
+        return highlighted
+          .replace(/(<[^>]*>)|( )/g, (m, p1, p2) => p1 || '<span class="ws-space"> </span>')
+          .replace(/(<[^>]*>)|(\t)/g, (m, p1, p2) => p1 || '<span class="ws-tab">\t</span>');
       }
     });
 
@@ -138,17 +147,15 @@
     return div.innerHTML;
   }
 
-  // 添加代码块复制按钮
-  function addCopyButtons() {
+  // 添加代码块工具栏（复制按钮和显示空格切换）
+  function addCodeBlockToolbars() {
     const codeBlocks = app.querySelectorAll('pre code');
-    codeBlocks.forEach((codeBlock, index) => {
+    codeBlocks.forEach((codeBlock) => {
       const pre = codeBlock.parentElement;
-      if (!pre || pre.tagName !== 'PRE') return;
+      if (!pre || pre.tagName !== 'PRE' || pre.closest('.mermaid-source')) return;
 
-      // 如果父容器是隐藏的，可能需要特殊处理或者等显示后再添加，但 querySelectorAll 依然能找到
-      
-      // 检查是否已有复制按钮
-      if (pre.querySelector('.copy-button')) return;
+      // 检查是否已有工具栏
+      if (pre.querySelector('.code-toolbar')) return;
 
       // 获取语言类型
       const langMatch = codeBlock.className.match(/language-(\w+)/);
@@ -157,15 +164,32 @@
         pre.setAttribute('data-lang', lang);
       }
 
-      // 创建复制按钮
+      // 创建工具栏容器
+      const toolbar = document.createElement('div');
+      toolbar.className = 'code-toolbar';
+
+      // 1. 显示/隐藏空格按钮
+      const wsBtn = document.createElement('button');
+      wsBtn.className = 'toolbar-btn ws-toggle';
+      wsBtn.innerHTML = '¶'; // 段落符号，常用于表示显示隐藏字符
+      wsBtn.title = 'Toggle Whitespace';
+      
+      // 默认不显示空格，所以不需要 active 类
+      wsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isShowing = pre.classList.toggle('show-whitespace');
+        wsBtn.classList.toggle('active', isShowing);
+      });
+
+      // 2. 复制按钮
       const copyBtn = document.createElement('button');
-      copyBtn.className = 'copy-button';
+      copyBtn.className = 'toolbar-btn copy-btn';
       copyBtn.textContent = 'Copy';
       copyBtn.title = 'Copy Code';
 
-      // 复制功能
       copyBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        // 复制时需要处理掉我们添加的 span，直接取 textContent 即可
         const text = codeBlock.textContent;
         try {
           await navigator.clipboard.writeText(text);
@@ -198,8 +222,15 @@
         }
       });
 
-      pre.appendChild(copyBtn);
+      toolbar.appendChild(wsBtn);
+      toolbar.appendChild(copyBtn);
+      pre.appendChild(toolbar);
     });
+  }
+
+  // 修改原来的 addCopyButtons 调用
+  function addCopyButtons() {
+    addCodeBlockToolbars();
   }
 
   // 初始化 Mermaid
