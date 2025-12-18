@@ -2,7 +2,7 @@
   "name": "mc-markdown-preview",
   "displayName": "MC Markdown Preview",
   "description": "%extension.description%",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "engines": {
     "vscode": "^1.80.0"
   },

@@ -63,7 +63,20 @@
         if (langName === 'mermaid') {
           const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
           const escapedCode = escapeHtml(token.content);
-          const highlightedCode = typeof hljs !== 'undefined' ? hljs.highlight(token.content, { language: 'mermaid' }).value : escapedCode;
+          
+          // 安全地获取高亮代码
+          let highlightedCode = escapedCode;
+          if (typeof hljs !== 'undefined') {
+            try {
+              if (hljs.getLanguage('mermaid')) {
+                highlightedCode = hljs.highlight(token.content, { language: 'mermaid' }).value;
+              } else {
+                highlightedCode = hljs.highlightAuto(token.content).value;
+              }
+            } catch (e) {
+              console.error('Highlight.js error for mermaid source:', e);
+            }
+          }
           
           return `<div class="mermaid-wrapper" data-mermaid-id="${id}" data-mermaid-code="${escapedCode}">
             <div class="mermaid-toolbar">
