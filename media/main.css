@@ -295,6 +295,43 @@ body {
   transform-origin: center center;
 }
 
+/* Mermaid 线条与箭头优化 */
+.mermaid svg .edgePath path {
+  stroke-width: 2.5px !important; /* 增粗线条 */
+}
+
+.vscode-dark .mermaid svg .edgePath path,
+.vscode-dark .mermaid svg .path {
+  stroke: #f0f0f0 !important; /* 强制深色模式下使用接近白色的线条 */
+}
+
+.vscode-dark .mermaid svg .marker,
+.vscode-dark .mermaid svg .markerPath,
+.vscode-dark .mermaid svg [id*="arrowhead"] {
+  fill: #f0f0f0 !important;
+  stroke: #f0f0f0 !important;
+}
+
+.vscode-dark .mermaid svg .edgeLabel {
+  background-color: var(--code-bg) !important;
+  color: #ffffff !important;
+}
+
+.vscode-dark .mermaid svg .label {
+  color: #ffffff !important;
+}
+
+/* 浅色模式线条 */
+.vscode-light .mermaid svg .edgePath path {
+  stroke: #333333 !important;
+}
+
+.vscode-light .mermaid svg .marker,
+.vscode-light .mermaid svg .markerPath {
+  fill: #333333 !important;
+  stroke: #333333 !important;
+}
+
 /* 数学公式 */
 .markdown-body .katex {
   font-size: 1.1em;

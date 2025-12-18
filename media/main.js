@@ -182,9 +182,22 @@
       return;
     }
 
+    const isDark = document.body.classList.contains('vscode-dark');
+    
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'default',
+      theme: isDark ? 'dark' : 'default',
+      themeVariables: {
+        // 线条颜色
+        lineColor: isDark ? '#e0e0e0' : '#333333',
+        edgeColor: isDark ? '#e0e0e0' : '#333333',
+        // 节点边框颜色
+        nodeBorder: isDark ? '#888888' : '#333333',
+        // 文本颜色
+        primaryTextColor: isDark ? '#ffffff' : '#333333',
+        // 箭头颜色
+        mainBkg: isDark ? '#2d2d2d' : '#ffffff',
+      },
       securityLevel: 'loose',
       fontFamily: 'ui-sans-serif, system-ui, sans-serif',
       flowchart: {
@@ -193,7 +206,7 @@
         nodeSpacing: 60,
         rankSpacing: 60,
         diagramPadding: 30,
-        useMaxWidth: false, // 禁用最大宽度限制，由容器 CSS 控制
+        useMaxWidth: false,
         htmlLabels: true,
       },
       sequence: {
