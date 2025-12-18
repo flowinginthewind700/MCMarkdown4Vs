@@ -232,6 +232,7 @@ body {
   top: 12px;
   right: 12px;
   display: flex;
+  align-items: center;
   gap: 6px;
   z-index: 100;
   background: rgba(var(--bg-color), 0.8);
@@ -241,6 +242,13 @@ body {
   border: 1px solid var(--border-color);
   opacity: 0;
   transition: opacity 0.3s;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 18px;
+  background-color: var(--border-color);
+  margin: 0 2px;
 }
 
 .mermaid-wrapper:hover .mermaid-toolbar {
@@ -262,9 +270,20 @@ body {
   transition: all 0.2s;
 }
 
+.mermaid-toolbar-btn.active {
+  background-color: var(--link-color);
+  color: #ffffff;
+  border-color: var(--link-color);
+}
+
 .mermaid-toolbar-btn:hover {
   background: var(--code-bg);
   transform: scale(1.1);
+}
+
+.mermaid-toolbar-btn.active:hover {
+  background-color: var(--link-color);
+  opacity: 0.9;
 }
 
 .markdown-body .mermaid-wrapper .mermaid {
@@ -272,13 +291,40 @@ body {
   background: var(--bg-color);
   padding: 40px;
   width: 100%;
-  min-height: 500px; /* 进一步增加默认高度 */
-  overflow: hidden; /* 由 JS 处理拖拽和缩放 */
+  min-height: 500px;
+  overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
+}
+
+.markdown-body .mermaid-wrapper .mermaid.hidden {
+  display: none !important;
+}
+
+/* Mermaid 源码视图 */
+.mermaid-source {
+  background: var(--code-bg);
+  width: 100%;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mermaid-source pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  height: 100%;
+  min-height: 500px;
+  flex: 1;
+  padding-top: 50px !important; /* 为工具栏留出空间 */
+}
+
+.mermaid-source.hidden {
+  display: none !important;
 }
 
 .markdown-body .mermaid-wrapper .mermaid:active {

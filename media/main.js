@@ -62,13 +62,25 @@
         // 处理 Mermaid 图表
         if (langName === 'mermaid') {
           const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-          return `<div class="mermaid-wrapper" data-mermaid-id="${id}" data-mermaid-code="${escapeHtml(token.content)}">
+          const escapedCode = escapeHtml(token.content);
+          const highlightedCode = typeof hljs !== 'undefined' ? hljs.highlight(token.content, { language: 'mermaid' }).value : escapedCode;
+          
+          return `<div class="mermaid-wrapper" data-mermaid-id="${id}" data-mermaid-code="${escapedCode}">
             <div class="mermaid-toolbar">
+              <button class="mermaid-toolbar-btn view-source" title="View Source Code">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.72 3.22a.75.75 0 0 1 1.06 1.06L2.06 8l3.72 3.72a.75.75 0 1 1-1.06 1.06L.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25zm6.56 0a.75.75 0 1 0-1.06 1.06L13.94 8l-3.72 3.72a.75.75 0 1 0 1.06 1.06l4.25-4.25a.75.75 0 0 0 0-1.06l-4.25-4.25z"></path></svg>
+              </button>
+              <div class="toolbar-separator"></div>
               <button class="mermaid-toolbar-btn zoom-in" title="Zoom In">+</button>
               <button class="mermaid-toolbar-btn zoom-out" title="Zoom Out">-</button>
               <button class="mermaid-toolbar-btn reset-zoom" title="Reset">⟲</button>
             </div>
-            <div class="mermaid" id="${id}">${token.content}</div>
+            <div class="mermaid-container-actual">
+              <div class="mermaid" id="${id}">${token.content}</div>
+              <div class="mermaid-source hidden">
+                <pre data-lang="mermaid"><code class="language-mermaid">${highlightedCode}</code></pre>
+              </div>
+            </div>
           </div>`;
         }
 
@@ -120,6 +132,8 @@
       const pre = codeBlock.parentElement;
       if (!pre || pre.tagName !== 'PRE') return;
 
+      // 如果父容器是隐藏的，可能需要特殊处理或者等显示后再添加，但 querySelectorAll 依然能找到
+      
       // 检查是否已有复制按钮
       if (pre.querySelector('.copy-button')) return;
 
@@ -303,6 +317,38 @@
     const btnZoomIn = wrapper.querySelector('.zoom-in');
     const btnZoomOut = wrapper.querySelector('.zoom-out');
     const btnReset = wrapper.querySelector('.reset-zoom');
+    const btnSource = wrapper.querySelector('.view-source');
+    const mermaidDiv = wrapper.querySelector('.mermaid');
+    const sourceDiv = wrapper.querySelector('.mermaid-source');
+
+    if (btnSource) {
+      btnSource.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isSourceVisible = !sourceDiv.classList.contains('hidden');
+        if (isSourceVisible) {
+          sourceDiv.classList.add('hidden');
+          mermaidDiv.classList.remove('hidden');
+          btnSource.classList.remove('active');
+          btnSource.title = 'View Source Code';
+          // 重新显示缩放按钮
+          if (btnZoomIn) btnZoomIn.style.display = '';
+          if (btnZoomOut) btnZoomOut.style.display = '';
+          if (btnReset) btnReset.style.display = '';
+        } else {
+          sourceDiv.classList.remove('hidden');
+          mermaidDiv.classList.add('hidden');
+          btnSource.classList.add('active');
+          btnSource.title = 'View Diagram';
+          // 隐藏不相关的缩放按钮
+          if (btnZoomIn) btnZoomIn.style.display = 'none';
+          if (btnZoomOut) btnZoomOut.style.display = 'none';
+          if (btnReset) btnReset.style.display = 'none';
+          
+          // 确保代码块有复制按钮
+          addCopyButtons();
+        }
+      });
+    }
 
     if (btnZoomIn) {
       btnZoomIn.addEventListener('click', (e) => {
