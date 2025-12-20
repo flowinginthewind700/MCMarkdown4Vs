@@ -19,6 +19,7 @@ An elegant VSCode/Cursor Markdown preview extension with full support for mathem
     - **Syntax Highlighting**: Powered by `highlight.js` with auto-language detection.
     - **Language Labels**: Clear indication of the programming language.
     - **One-click Copy**: Quick copy button for every code snippet.
+    - **Toggle Whitespace**: Click the "¶" button to show/hide whitespace indicators (dots for spaces, arrows for tabs).
 - 🌍 **Internationalization (i18n)**: Supports both English and Chinese UI based on VSCode settings.
 
 ## 🚀 Installation

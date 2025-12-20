@@ -168,6 +168,55 @@ body {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, 'Courier New', Courier, monospace;
 }
 
+/* 移除语法高亮元素的背景色，使其与代码块背景一致 */
+.markdown-body pre code,
+.markdown-body pre code *,
+.markdown-body pre code .hljs,
+.markdown-body pre code .hljs *,
+.markdown-body pre code.hljs,
+.markdown-body pre code.hljs * {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 移除所有可能的语法高亮类的背景色 */
+.markdown-body pre code .hljs-keyword,
+.markdown-body pre code .hljs-string,
+.markdown-body pre code .hljs-comment,
+.markdown-body pre code .hljs-number,
+.markdown-body pre code .hljs-function,
+.markdown-body pre code .hljs-title,
+.markdown-body pre code .hljs-variable,
+.markdown-body pre code .hljs-attr,
+.markdown-body pre code .hljs-attribute,
+.markdown-body pre code .hljs-literal,
+.markdown-body pre code .hljs-meta,
+.markdown-body pre code .hljs-operator,
+.markdown-body pre code .hljs-selector-class,
+.markdown-body pre code .hljs-selector-id,
+.markdown-body pre code .hljs-selector-tag,
+.markdown-body pre code .hljs-type,
+.markdown-body pre code .hljs-built_in,
+.markdown-body pre code .hljs-symbol,
+.markdown-body pre code .hljs-name,
+.markdown-body pre code .hljs-quote,
+.markdown-body pre code .hljs-section,
+.markdown-body pre code .hljs-bullet,
+.markdown-body pre code .hljs-emphasis,
+.markdown-body pre code .hljs-strong,
+.markdown-body pre code .hljs-addition,
+.markdown-body pre code .hljs-deletion,
+.markdown-body pre code .hljs-doctag,
+.markdown-body pre code .hljs-template-tag,
+.markdown-body pre code .hljs-template-variable,
+.markdown-body pre code .hljs-regexp,
+.markdown-body pre code .hljs-code,
+.markdown-body pre code .hljs-formula,
+.markdown-body pre code .hljs-subst {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
 /* 语言标签 */
 .markdown-body pre::after {
   content: attr(data-lang);
@@ -347,6 +396,56 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 优化 Mermaid 文字可读性 */
+.markdown-body .mermaid-wrapper .mermaid svg {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.markdown-body .mermaid-wrapper .mermaid svg text {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em;
+}
+
+.markdown-body .mermaid-wrapper .mermaid svg tspan {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+/* 节点标签文字增强 */
+.markdown-body .mermaid-wrapper .mermaid svg .nodeLabel,
+.markdown-body .mermaid-wrapper .mermaid svg .edgeLabel,
+.markdown-body .mermaid-wrapper .mermaid svg .cluster-label {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+/* 确保小文字也有足够大小 */
+.markdown-body .mermaid-wrapper .mermaid svg text[font-size] {
+  font-size: max(14px, attr(font-size px)) !important;
+}
+
+/* 深色模式下的文字增强 */
+.vscode-dark .markdown-body .mermaid-wrapper .mermaid svg text {
+  fill: #ffffff !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.vscode-dark .markdown-body .mermaid-wrapper .mermaid svg tspan {
+  fill: #ffffff !important;
+}
+
+/* 浅色模式下的文字增强 */
+.vscode-light .markdown-body .mermaid-wrapper .mermaid svg text {
+  fill: #1a1a1a !important;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.8));
+}
+
+.vscode-light .markdown-body .mermaid-wrapper .mermaid svg tspan {
+  fill: #1a1a1a !important;
+}
   cursor: grab;
 }
 

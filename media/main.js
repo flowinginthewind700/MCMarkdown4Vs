@@ -35,11 +35,8 @@
           highlighted = escapeHtml(str);
         }
 
-        // 将空格和制表符包装在 span 中，以便控制显示/隐藏
-        // 使用正则避免替换 HTML 标签内部的空格
-        return highlighted
-          .replace(/(<[^>]*>)|( )/g, (m, p1, p2) => p1 || '<span class="ws-space"> </span>')
-          .replace(/(<[^>]*>)|(\t)/g, (m, p1, p2) => p1 || '<span class="ws-tab">\t</span>');
+        // 不再默认包装空格，只在用户点击显示空格按钮时才添加
+        return highlighted;
       }
     });
 
@@ -174,11 +171,102 @@
       wsBtn.innerHTML = '¶'; // 段落符号，常用于表示显示隐藏字符
       wsBtn.title = 'Toggle Whitespace';
       
+      // 动态添加/移除空格标记的函数
+      const toggleWhitespace = (show) => {
+        if (show) {
+          // 添加空格标记：将空格和制表符包装在 span 中
+          const walker = document.createTreeWalker(
+            codeBlock,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+          const textNodes = [];
+          let node;
+          while (node = walker.nextNode()) {
+            // 跳过已经在 span 中的文本节点
+            if (node.parentElement && (node.parentElement.classList.contains('ws-space') || node.parentElement.classList.contains('ws-tab'))) {
+              continue;
+            }
+            textNodes.push(node);
+          }
+          
+          textNodes.forEach(textNode => {
+            const text = textNode.textContent;
+            const parent = textNode.parentNode;
+            const fragment = document.createDocumentFragment();
+            let lastIndex = 0;
+            
+            // 处理空格和制表符
+            for (let i = 0; i < text.length; i++) {
+              if (text[i] === ' ') {
+                if (lastIndex < i) {
+                  fragment.appendChild(document.createTextNode(text.substring(lastIndex, i)));
+                }
+                const span = document.createElement('span');
+                span.className = 'ws-space';
+                span.textContent = ' ';
+                fragment.appendChild(span);
+                lastIndex = i + 1;
+              } else if (text[i] === '\t') {
+                if (lastIndex < i) {
+                  fragment.appendChild(document.createTextNode(text.substring(lastIndex, i)));
+                }
+                const span = document.createElement('span');
+                span.className = 'ws-tab';
+                span.textContent = '\t';
+                fragment.appendChild(span);
+                lastIndex = i + 1;
+              }
+            }
+            
+            if (lastIndex < text.length) {
+              fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+            }
+            
+            if (fragment.childNodes.length > 0) {
+              parent.replaceChild(fragment, textNode);
+            }
+          });
+        } else {
+          // 移除空格标记：将 span 中的内容还原为普通文本
+          const wsSpans = codeBlock.querySelectorAll('.ws-space, .ws-tab');
+          wsSpans.forEach(span => {
+            const textNode = document.createTextNode(span.textContent);
+            span.parentNode.replaceChild(textNode, span);
+          });
+          
+          // 合并相邻的文本节点
+          const walker = document.createTreeWalker(
+            codeBlock,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+          const textNodes = [];
+          let node;
+          while (node = walker.nextNode()) {
+            textNodes.push(node);
+          }
+          
+          // 合并相邻的文本节点
+          for (let i = textNodes.length - 1; i > 0; i--) {
+            const prev = textNodes[i - 1];
+            const curr = textNodes[i];
+            if (prev.nextSibling === curr && prev.parentNode === curr.parentNode) {
+              prev.textContent += curr.textContent;
+              curr.parentNode.removeChild(curr);
+            }
+          }
+        }
+      };
+      
       // 默认不显示空格，所以不需要 active 类
       wsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isShowing = pre.classList.toggle('show-whitespace');
         wsBtn.classList.toggle('active', isShowing);
+        toggleWhitespace(isShowing);
       });
 
       // 2. 复制按钮
@@ -234,6 +322,150 @@
   }
 
   // 初始化 Mermaid
+  // 增强 Mermaid 文字可读性
+  function enhanceMermaidTextReadability(svgElement, isDark) {
+    if (!svgElement) return;
+    
+    // 获取所有文本元素
+    const textElements = svgElement.querySelectorAll('text, tspan');
+    const isDarkMode = isDark || document.body.classList.contains('vscode-dark');
+    
+    textElements.forEach(textEl => {
+      // 获取当前字体大小
+      const currentFontSize = parseFloat(textEl.getAttribute('font-size') || window.getComputedStyle(textEl).fontSize || '14');
+      
+      // 如果字体小于 14px，增大到至少 14px
+      if (currentFontSize < 14) {
+        textEl.setAttribute('font-size', Math.max(14, currentFontSize * 1.2));
+      } else if (currentFontSize < 16) {
+        // 如果字体在 14-16px 之间，适当增大
+        textEl.setAttribute('font-size', currentFontSize * 1.15);
+      }
+      
+      // 增强文字对比度
+      const currentFill = textEl.getAttribute('fill') || textEl.style.fill || (isDarkMode ? '#ffffff' : '#1a1a1a');
+      
+      // 确保文字颜色有足够的对比度
+      if (isDarkMode) {
+        // 深色模式：使用更亮的白色
+        if (currentFill === '#ffffff' || currentFill === '#fff' || !currentFill) {
+          textEl.setAttribute('fill', '#ffffff');
+        } else {
+          // 对于其他颜色，确保亮度足够
+          textEl.setAttribute('fill', currentFill);
+        }
+        // 添加文字阴影以提高可读性
+        textEl.setAttribute('filter', 'url(#text-shadow-dark)');
+      } else {
+        // 浅色模式：使用更深的黑色
+        if (currentFill === '#333333' || currentFill === '#333' || currentFill === '#000000' || currentFill === '#000' || !currentFill) {
+          textEl.setAttribute('fill', '#1a1a1a');
+        } else {
+          textEl.setAttribute('fill', currentFill);
+        }
+        // 添加文字阴影以提高可读性
+        textEl.setAttribute('filter', 'url(#text-shadow-light)');
+      }
+      
+      // 设置字体粗细以提高可读性
+      const fontWeight = textEl.getAttribute('font-weight') || textEl.style.fontWeight || 'normal';
+      if (fontWeight === 'normal' || !fontWeight) {
+        textEl.setAttribute('font-weight', '500');
+      }
+    });
+    
+    // 添加文字阴影滤镜定义（如果不存在）
+    let defs = svgElement.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svgElement.insertBefore(defs, svgElement.firstChild);
+    }
+    
+    // 深色模式文字阴影
+    if (!defs.querySelector('#text-shadow-dark')) {
+      const darkFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+      darkFilter.setAttribute('id', 'text-shadow-dark');
+      darkFilter.setAttribute('x', '-50%');
+      darkFilter.setAttribute('y', '-50%');
+      darkFilter.setAttribute('width', '200%');
+      darkFilter.setAttribute('height', '200%');
+      
+      const feGaussianBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+      feGaussianBlur.setAttribute('in', 'SourceAlpha');
+      feGaussianBlur.setAttribute('stdDeviation', '1');
+      
+      const feOffset = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+      feOffset.setAttribute('dx', '0.5');
+      feOffset.setAttribute('dy', '0.5');
+      feOffset.setAttribute('result', 'offsetBlur');
+      
+      const feFlood = document.createElementNS('http://www.w3.org/2000/svg', 'feFlood');
+      feFlood.setAttribute('flood-color', '#000000');
+      feFlood.setAttribute('flood-opacity', '0.3');
+      
+      const feComposite = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
+      feComposite.setAttribute('in2', 'offsetBlur');
+      feComposite.setAttribute('operator', 'in');
+      
+      const feMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+      const feMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+      const feMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+      feMergeNode2.setAttribute('in', 'SourceGraphic');
+      
+      feMerge.appendChild(feMergeNode1);
+      feMerge.appendChild(feMergeNode2);
+      
+      darkFilter.appendChild(feGaussianBlur);
+      darkFilter.appendChild(feOffset);
+      darkFilter.appendChild(feFlood);
+      darkFilter.appendChild(feComposite);
+      darkFilter.appendChild(feMerge);
+      defs.appendChild(darkFilter);
+    }
+    
+    // 浅色模式文字阴影
+    if (!defs.querySelector('#text-shadow-light')) {
+      const lightFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+      lightFilter.setAttribute('id', 'text-shadow-light');
+      lightFilter.setAttribute('x', '-50%');
+      lightFilter.setAttribute('y', '-50%');
+      lightFilter.setAttribute('width', '200%');
+      lightFilter.setAttribute('height', '200%');
+      
+      const feGaussianBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+      feGaussianBlur.setAttribute('in', 'SourceAlpha');
+      feGaussianBlur.setAttribute('stdDeviation', '0.5');
+      
+      const feOffset = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+      feOffset.setAttribute('dx', '0.3');
+      feOffset.setAttribute('dy', '0.3');
+      feOffset.setAttribute('result', 'offsetBlur');
+      
+      const feFlood = document.createElementNS('http://www.w3.org/2000/svg', 'feFlood');
+      feFlood.setAttribute('flood-color', '#ffffff');
+      feFlood.setAttribute('flood-opacity', '0.5');
+      
+      const feComposite = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
+      feComposite.setAttribute('in2', 'offsetBlur');
+      feComposite.setAttribute('operator', 'in');
+      
+      const feMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+      const feMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+      const feMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+      feMergeNode2.setAttribute('in', 'SourceGraphic');
+      
+      feMerge.appendChild(feMergeNode1);
+      feMerge.appendChild(feMergeNode2);
+      
+      lightFilter.appendChild(feGaussianBlur);
+      lightFilter.appendChild(feOffset);
+      lightFilter.appendChild(feFlood);
+      lightFilter.appendChild(feComposite);
+      lightFilter.appendChild(feMerge);
+      defs.appendChild(lightFilter);
+    }
+  }
+
   function initMermaid() {
     if (typeof mermaid === 'undefined') {
       console.error('mermaid not loaded');
@@ -251,13 +483,21 @@
         edgeColor: isDark ? '#e0e0e0' : '#333333',
         // 节点边框颜色
         nodeBorder: isDark ? '#888888' : '#333333',
-        // 文本颜色
-        primaryTextColor: isDark ? '#ffffff' : '#333333',
+        // 文本颜色 - 增强对比度
+        primaryTextColor: isDark ? '#ffffff' : '#1a1a1a',
+        secondaryTextColor: isDark ? '#e0e0e0' : '#2a2a2a',
+        tertiaryTextColor: isDark ? '#d0d0d0' : '#3a3a3a',
+        textColor: isDark ? '#ffffff' : '#1a1a1a',
         // 箭头颜色
         mainBkg: isDark ? '#2d2d2d' : '#ffffff',
+        // 字体大小 - 增大以提高可读性
+        fontSize: '16px',
+        primaryFontSize: '16px',
+        secondaryFontSize: '14px',
+        tertiaryFontSize: '13px',
       },
       securityLevel: 'loose',
-      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       flowchart: {
         curve: 'basis',
         padding: 30,
@@ -288,8 +528,8 @@
         topPadding: 50,
         leftPadding: 75,
         gridLineStartPadding: 35,
-        fontSize: 11,
-        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+        fontSize: 14,
+        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         numberSectionStyles: 4,
         axisFormat: '%Y-%m-%d',
         useMaxWidth: false,
@@ -300,6 +540,7 @@
   // 渲染 Mermaid 图表
   async function renderMermaidDiagrams() {
     const wrappers = document.querySelectorAll('.mermaid-wrapper');
+    const isDark = document.body.classList.contains('vscode-dark');
     
     for (const wrapper of wrappers) {
       if (wrapper.classList.contains('rendered')) continue;
@@ -334,12 +575,24 @@
           svgElement.style.height = 'auto';
           svgElement.style.maxWidth = 'none'; // 允许缩放
           
+          // 优化文字可读性：增大字体、增强对比度
+          enhanceMermaidTextReadability(svgElement, isDark);
+          
           // 设置初始缩放和位置
           setupMermaidInteractivity(wrapper, svgElement);
         }
       } catch (err) {
-        mermaidDiv.innerHTML = `<div style="padding: 20px; color: #d73a49; background: #ffeef0; border-radius: 6px; font-size: 14px;">
-          <strong>Mermaid Render Error:</strong><br>${escapeHtml(err.message)}
+        // 改进错误提示，显示更详细的信息
+        const errorMsg = err.message || 'Unknown error';
+        const errorLine = errorMsg.match(/line (\d+)/i);
+        const lineInfo = errorLine ? ` (Line ${errorLine[1]})` : '';
+        mermaidDiv.innerHTML = `<div style="padding: 20px; color: #d73a49; background: #ffeef0; border-radius: 6px; font-size: 14px; line-height: 1.6;">
+          <strong>Mermaid Render Error:</strong><br>
+          ${escapeHtml(errorMsg)}${lineInfo}<br><br>
+          <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; color: #0366d6;">查看源代码</summary>
+            <pre style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #e1e4e8; border-radius: 4px; overflow-x: auto; font-size: 12px;">${escapeHtml(code)}</pre>
+          </details>
         </div>`;
         console.error('Mermaid render error:', err);
       }
